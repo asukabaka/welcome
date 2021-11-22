@@ -44,31 +44,10 @@ const params = {
         };
 
 
+// Initialization and animation function calls
 init();
 animate();
-function initControls(){
-	// Identify the html divs for the overlays
-	const blocker = document.getElementById("blocker");
-	const instructions = document.getElementById("instructions");
-
-	// Listen for clicks and respond by removing overlays and starting mouse look controls
-	// Listen
-	instructions.addEventListener("click", function() {
-		controls.lock();
-	});
-	// Remove overlays and begin controls on click
-	controls.addEventListener("lock", function() {
-		instructions.style.display = "none";
-		blocker.style.display = "none";
-	});
-	// Restore overlays and stop controls on esc
-	controls.addEventListener("unlock", function() {
-		blocker.style.display = "block";
-		instructions.style.display = "";
-	});
-	// Add controls to scene
-	scene.add(controls.getObject());
-}
+//Initialize Sky
 function initSky() {
 
   // Add Sky
@@ -120,64 +99,6 @@ function initSky() {
 
 
 }
-function initWASD() {
-	// Define key controls for WASD controls
-	const onKeyDown = function(event) {
-		switch (event.code) {
-			case "ArrowUp":
-			case "KeyW":
-				moveForward = true;
-				break;
-
-			case "ArrowLeft":
-			case "KeyA":
-				moveLeft = true;
-				break;
-
-			case "ArrowDown":
-			case "KeyS":
-				moveBackward = true;
-				break;
-
-			case "ArrowRight":
-			case "KeyD":
-				moveRight = true;
-				break;
-
-			case "Space":
-				if (canJump === true) velocity.y += 350;
-				canJump = false;
-				break;
-		}
-	};
-
-	const onKeyUp = function(event) {
-		switch (event.code) {
-			case "ArrowUp":
-			case "KeyW":
-				moveForward = false;
-				break;
-
-			case "ArrowLeft":
-			case "KeyA":
-				moveLeft = false;
-				break;
-
-			case "ArrowDown":
-			case "KeyS":
-				moveBackward = false;
-				break;
-
-			case "ArrowRight":
-			case "KeyD":
-				moveRight = false;
-				break;
-		}
-	};
-
-	document.addEventListener("keydown", onKeyDown);
-	document.addEventListener("keyup", onKeyUp);
-}
 function initWater() {
 	// Water
 
@@ -205,32 +126,230 @@ function initWater() {
 
 				scene.add( water );
 }
-function initParticles() {
-	// Particles
-									const geometry = new THREE.BufferGeometry();
-									const vertices = [];
+// Initialize the scene
+function init() {
+	clock = new THREE.Clock();
+	// stats = new Stats();
+  // Establish the camera
+  camera = new THREE.PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    1,
+    10000
+  );
+  camera.position.y = 30;
+  // Define basic scene parameters
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x000000);
+  scene.fog = new THREE.Fog(0xffffff, 0, 750);
 
-									const sprite = new THREE.TextureLoader().load( './assets/disc.png' );
+  // Define scene lighting
+  const light = new THREE.HemisphereLight(0xeeeeff, 0x777788, 0.75);
+  light.position.set(0.5, 1, 0.75);
+  scene.add(light);
 
-									for ( let i = 0; i < 1000000; i ++ ) {
+  sun = new THREE.Vector3();
+  // Define controls
+  controls = new PointerLockControls(camera, document.body);
 
-										const x = 20000 * Math.random() - 1000;
-										const y = 20000 * Math.random() - 1000;
-										const z = 2000 * Math.random() - 1000;
+  // Identify the html divs for the overlays
+  const blocker = document.getElementById("blocker");
+  const instructions = document.getElementById("instructions");
 
-										vertices.push( x, y, z );
+  // Listen for clicks and respond by removing overlays and starting mouse look controls
+  // Listen
+  instructions.addEventListener("click", function() {
+    controls.lock();
+  });
+  // Remove overlays and begin controls on click
+  controls.addEventListener("lock", function() {
+    instructions.style.display = "none";
+    blocker.style.display = "none";
+  });
+  // Restore overlays and stop controls on esc
+  controls.addEventListener("unlock", function() {
+    blocker.style.display = "block";
+    instructions.style.display = "";
+  });
+  // Add controls to scene
+  scene.add(controls.getObject());
 
-									}
+  // Define key controls for WASD controls
+  const onKeyDown = function(event) {
+    switch (event.code) {
+      case "ArrowUp":
+      case "KeyW":
+        moveForward = true;
+        break;
 
-									geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+      case "ArrowLeft":
+      case "KeyA":
+        moveLeft = true;
+        break;
 
-									material = new THREE.PointsMaterial( { size: 2, sizeAttenuation: true, map: sprite, alphaTest: 0.5, transparent: true } );
-									material.color.setHSL( 0.5, 1, 0.5 );
+      case "ArrowDown":
+      case "KeyS":
+        moveBackward = true;
+        break;
 
-									const particles = new THREE.Points( geometry, material );
-									scene.add( particles );
-}
-function initBloom() {
+      case "ArrowRight":
+      case "KeyD":
+        moveRight = true;
+        break;
+
+      case "Space":
+        if (canJump === true) velocity.y += 350;
+        canJump = false;
+        break;
+    }
+  };
+
+  const onKeyUp = function(event) {
+    switch (event.code) {
+      case "ArrowUp":
+      case "KeyW":
+        moveForward = false;
+        break;
+
+      case "ArrowLeft":
+      case "KeyA":
+        moveLeft = false;
+        break;
+
+      case "ArrowDown":
+      case "KeyS":
+        moveBackward = false;
+        break;
+
+      case "ArrowRight":
+      case "KeyD":
+        moveRight = false;
+        break;
+    }
+  };
+
+  document.addEventListener("keydown", onKeyDown);
+  document.addEventListener("keyup", onKeyUp);
+
+  // Add raycasting for mouse controls
+  raycaster = new THREE.Raycaster(
+    new THREE.Vector3(),
+    new THREE.Vector3(0, -1, 0),
+    0,
+    10
+  );
+
+  //3D file Loader
+
+  const loader = new GLTFLoader().load("./assets/city1.gltf",
+    function(gltf) {
+      // Scan loaded model for mesh and apply defined material if mesh is present
+      // gltf.scene.traverse(function(child) {  });
+
+      // Set position and scale
+      mesh = gltf.scene;
+      mesh.position.set(0, 0, 1);
+      mesh.scale.set(3, 3, 3);
+      // Add model to scene
+      scene.add(mesh);
+    },
+    undefined,
+    function(error) {
+      console.error(error);
+    }
+  );
+
+	const loader1 = new GLTFLoader().load("./assets/BrokenBuilding1.gltf",
+		function(gltf) {
+			// Scan loaded model for mesh and apply defined material if mesh is present
+			// gltf.scene.traverse(function(child) {  });
+
+			// Set position and scale
+			mesh1 = gltf.scene;
+			mesh1.position.set(10, 0, 10);
+			mesh1.scale.set(300, 300, 300);
+			// Add model to scene
+			scene.add(mesh1);
+		},
+		undefined,
+		function(error) {
+			console.error(error);
+		}
+	);
+
+	const loader2 = new GLTFLoader().load("./assets/BrokenBuilding1.gltf",
+		function(gltf) {
+			// Scan loaded model for mesh and apply defined material if mesh is present
+			// gltf.scene.traverse(function(child) {  });
+
+			// Set position and scale
+			mesh2 = gltf.scene;
+			mesh2.position.set(-3000, 0, 1000);
+			mesh2.scale.set(300, 300, 300);
+			mesh2.rotation.x = Math.PI / -30;
+			// Add model to scene
+			scene.add(mesh2);
+		},
+		undefined,
+		function(error) {
+			console.error(error);
+		}
+	);
+
+	const loader3 = new GLTFLoader().load("./assets/BrokenBuilding1.gltf",
+		function(gltf) {
+			// Scan loaded model for mesh and apply defined material if mesh is present
+			// gltf.scene.traverse(function(child) {  });
+
+			// Set position and scale
+			mesh3 = gltf.scene;
+			mesh3.position.set(-3000, 0, -1000);
+			mesh3.scale.set(200, 200, 200);
+			mesh3.rotation.x = Math.PI / 40;
+			// Add model to scene
+			scene.add(mesh3);
+		},
+		undefined,
+		function(error) {
+			console.error(error);
+		}
+	);
+
+
+
+        // Particles
+                				const geometry = new THREE.BufferGeometry();
+                				const vertices = [];
+
+                				const sprite = new THREE.TextureLoader().load( './assets/disc.png' );
+
+                				for ( let i = 0; i < 1000000; i ++ ) {
+
+                					const x = 20000 * Math.random() - 1000;
+                					const y = 20000 * Math.random() - 1000;
+                					const z = 2000 * Math.random() - 1000;
+
+                					vertices.push( x, y, z );
+
+                				}
+
+                				geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+
+                				material = new THREE.PointsMaterial( { size: 2, sizeAttenuation: true, map: sprite, alphaTest: 0.5, transparent: true } );
+                				material.color.setHSL( 0.5, 1, 0.5 );
+
+                				const particles = new THREE.Points( geometry, material );
+                				scene.add( particles );
+
+
+  // Define Rendered and html document placement
+  renderer = new THREE.WebGLRenderer({
+    antialias: true
+  });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.toneMapping = THREE.ReinhardToneMapping;
+  document.body.appendChild(renderer.domElement);
 	// Bloom
 
 					const renderScene = new RenderPass( scene, camera );
@@ -282,110 +401,8 @@ function initBloom() {
 	        					bloomPass.radius = Number( value );
 
 	        				} );
-}
-function initModels() {
-	//3D file Loader
-
-	const loader = new GLTFLoader().load("./assets/city1.gltf",
-		function(gltf) {
-			mesh = gltf.scene;
-			mesh.position.set(0, 0, 1);
-			mesh.scale.set(3, 3, 3);
-			scene.add(mesh);
-		},
-		undefined,
-		function(error) {
-			console.error(error);
-		}
-	);
-
-	const loader1 = new GLTFLoader().load("./assets/BrokenBuilding1.gltf",
-		function(gltf) {
-			mesh1 = gltf.scene;
-			mesh1.position.set(10, 0, 10);
-			mesh1.scale.set(300, 300, 300);
-			// Add model to scene
-			scene.add(mesh1);
-		},
-		undefined,
-		function(error) {
-			console.error(error);
-		}
-	);
-
-	const loader2 = new GLTFLoader().load("./assets/BrokenBuilding1.gltf",
-		function(gltf) {
-			mesh2 = gltf.scene;
-			mesh2.position.set(-3000, 0, 1000);
-			mesh2.scale.set(300, 300, 300);
-			mesh2.rotation.x = Math.PI / -30;
-			scene.add(mesh2);
-		},
-		undefined,
-		function(error) {
-			console.error(error);
-		}
-	);
-
-	const loader3 = new GLTFLoader().load("./assets/BrokenBuilding1.gltf",
-		function(gltf) {
-			mesh3 = gltf.scene;
-			mesh3.position.set(-3000, 0, -1000);
-			mesh3.scale.set(200, 200, 200);
-			mesh3.rotation.x = Math.PI / 40;
-			scene.add(mesh3);
-		},
-		undefined,
-		function(error) {
-			console.error(error);
-		}
-	);
-}
-// Initialize the scene
-function init() {
-	clock = new THREE.Clock();
-	// stats = new Stats();
-  // Establish the camera
-  camera = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    1,
-    10000
-  );
-  camera.position.y = 30;
-  // Define basic scene parameters
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x000000);
-  scene.fog = new THREE.Fog(0xffffff, 0, 750);
-
-  // Define scene lighting
-  const light = new THREE.HemisphereLight(0xeeeeff, 0x777788, 0.75);
-  light.position.set(0.5, 1, 0.75);
-  scene.add(light);
-  // Define controls
-  controls = new PointerLockControls(camera, document.body);
-
-  // Add raycasting for mouse controls
-  raycaster = new THREE.Raycaster(
-    new THREE.Vector3(),
-    new THREE.Vector3(0, -1, 0),
-    0,
-    10
-  );
-  // Define Rendered and html document placement
-  renderer = new THREE.WebGLRenderer({antialias: true});
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.toneMapping = THREE.ReinhardToneMapping;
-  document.body.appendChild(renderer.domElement);
-
-	initControls();
-	initWASD();
   initSky();
 	initWater();
-	initParticles();
-	initBloom();
-	initModels();
 
   // Listen for window resizing
   window.addEventListener("resize", onWindowResize);
