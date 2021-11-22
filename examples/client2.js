@@ -17,7 +17,7 @@ let scene;
 let controls, water, sun;
 let sky;
 let raycaster;
-let material;
+let material, material2;
 let mesh, mesh1, mesh2, mesh3;
 let moveForward = false;
 let moveBackward = false;
@@ -44,10 +44,12 @@ initBloom();
 initWater();
 initSky();
 initParticles();
+initGroundParticles();
 initModels();
 animateWater();
 animateWASD();
 animateParticles();
+animateGroundParticles();
 
 function init() {
   clock = new THREE.Clock();
@@ -392,11 +394,38 @@ function initParticles() {
 
 									geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
 
-									material = new THREE.PointsMaterial( { size: 1.75, sizeAttenuation: true, map: sprite, alphaTest: 0.25, transparent: true } );
+									material = new THREE.PointsMaterial( { size: 1.75, sizeAttenuation: true, map: sprite, alphaTest: 0.25, transparent: true, opacity: .9 } );
 									material.color.setHSL( 0.5, 1, 0.5 );
+
 
 									const particles = new THREE.Points( geometry, material );
 									scene.add( particles );
+}
+function initGroundParticles (){
+  // Particles
+									const geometry2 = new THREE.BufferGeometry();
+									const vertices2 = [];
+
+									const sprite2 = new THREE.TextureLoader().load( './assets/disc.png' );
+
+									for ( let i = 0; i < 1000000; i ++ ) {
+
+										const x = 20000 * Math.random() - 1000;
+										const y = 20000 * Math.random() - 1000;
+										const z = 2000 * Math.random() - 1000;
+
+										vertices2.push( x, y * .025, z );
+
+									}
+
+									geometry2.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices2, 3 ) );
+
+									material2 = new THREE.PointsMaterial( { size: .25, sizeAttenuation: true, map: sprite2, alphaTest: 0.25, transparent: true, opacity: .9 } );
+									material2.color.setHSL( 0, 0, 1 );
+
+
+									const particles2 = new THREE.Points( geometry2, material2 );
+									scene.add( particles2 );
 }
 function initModels() {
 	//3D file Loader
@@ -539,7 +568,14 @@ function animateWater() {
 				stats.update();
 }
 function animateParticles() {
+
   requestAnimationFrame( animateParticles );
+
+  renderParticles();
+  stats.update();
+}
+function animateGroundParticles() {
+  requestAnimationFrame( animateGroundParticles );
 
   renderParticles();
   stats.update();
@@ -555,6 +591,13 @@ function renderSky() {
   renderer.render( scene, camera );
 }
 function renderParticles() {
+
+				material.color.setHSL( 0.5, 1, 0.5 );
+
+				renderer.render( scene, camera );
+
+}
+function renderGroundParticles() {
 
 				material.color.setHSL( 0.5, 1, 0.5 );
 

@@ -1,98 +1,129 @@
-let scene,camera, renderer, cloudParticles = [], flash, rain, rainGeo, rainCount = 15000;
-    function init() {
+import * as THREE from '../build/three.module.js';
+import Stats from './jsm/libs/stats.module.js';
+import { GUI } from './jsm/libs/dat.gui.module.js';
+import { OrbitControls } from './jsm/controls/OrbitControls.js';
+import {PointerLockControls} from "./src/PointerLockControls.js";
+import { GLTFLoader } from './jsm/loaders/GLTFLoader.js';
+import { EffectComposer } from './jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from './jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from './jsm/postprocessing/UnrealBloomPass.js';
+import { Water } from './jsm/objects/Water.js';
+import { Sky } from './jsm/objects/Sky.js';
 
-      scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(60,window.innerWidth / window.innerHeight, 1, 1000);
-      camera.position.z = 1;
-      camera.rotation.x = 1.16;
-      camera.rotation.y = -0.12;
-      camera.rotation.z = 0.27;
+// Debug
+const gui = new GUI()
 
-      ambient = new THREE.AmbientLight(0x555555);
-      scene.add(ambient);
+// Canvas
+const canvas = document.querySelector('canvas.webgl')
 
-      directionalLight = new THREE.DirectionalLight(0xffeedd);
-      directionalLight.position.set(0,0,1);
-      scene.add(directionalLight);
+// Scene
+const scene = new THREE.Scene()
 
-      flash = new THREE.PointLight(0x062d89, 30, 500 ,1.7);
-      flash.position.set(200,300,100);
-      scene.add(flash);
+// Objects
+const geometry = new THREE.TorusGeometry( .7, .2, 16, 100 );
+const particlesGeometry = new THREE.BufferGeometry;
+const particlesCount = 5000;
 
-      renderer = new THREE.WebGLRenderer();
-      scene.fog = new THREE.FogExp2(0x11111f, 0.002);
-      renderer.setClearColor(scene.fog.color);
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      document.body.appendChild(renderer.domElement);
+const posArray = new Float32Array(particlesCount * 3)
 
-      rainGeo = new THREE.Geometry();
-      for(let i=0;i<rainCount;i++) {
-        rainDrop = new THREE.Vector3(
-          Math.random() * 400 -200,
-          Math.random() * 500 - 250,
-          Math.random() * 400 - 200
-        );
-        rainDrop.velocity = {};
-        rainDrop.velocity = 0;
-        rainGeo.vertices.push(rainDrop);
-      }
-      rainMaterial = new THREE.PointsMaterial({
-        color: 0xaaaaaa,
-        size: 0.1,
-        transparent: true
-      });
-      rain = new THREE.Points(rainGeo,rainMaterial);
-      scene.add(rain);
-      let loader = new THREE.TextureLoader();
-      loader.load("./assets/smoke-1.png", function(texture){
+for(let i = 0; i <particlesCount * 3; i++) {
+  posArray[i] = (Math.random() - .5) * 5
+}
 
-        cloudGeo = new THREE.PlaneBufferGeometry(500,500);
-        cloudMaterial = new THREE.MeshLambertMaterial({
-          map: texture,
-          transparent: true
-        });
+particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3))
+// Materials
 
-        for(let p=0; p<25; p++) {
-          let cloud = new THREE.Mesh(cloudGeo,cloudMaterial);
-          cloud.position.set(
-            Math.random()*800 -400,
-            500,
-            Math.random()*500 - 450
-          );
-          cloud.rotation.x = 1.16;
-          cloud.rotation.y = -0.12;
-          cloud.rotation.z = Math.random()*360;
-          cloud.material.opacity = 0.6;
-          cloudParticles.push(cloud);
-          scene.add(cloud);
-        }
-        animate();
-      });
-    }
-    function animate() {
-      cloudParticles.forEach(p => {
-        p.rotation.z -=0.002;
-      });
-      rainGeo.vertices.forEach(p => {
-        p.velocity -= 0.1 + Math.random() * 0.1;
-        p.y += p.velocity;
-        if (p.y < -200) {
-          p.y = 200;
-          p.velocity = 0;
-        }
-      });
-      rainGeo.verticesNeedUpdate = true;
-      rain.rotation.y +=0.002;
-      if(Math.random() > 0.93 || flash.power > 100) {
-        if(flash.power < 100)
-          flash.position.set(
-            Math.random()*400,
-            300 + Math.random() *200,
-            100
-          );
-        flash.power = 50 + Math.random() * 500;
-      }
-      renderer.render(scene, camera);
-      requestAnimationFrame(animate);
-    }
-    init();
+const torusMaterial = new THREE.PointsMaterial({
+  transparent: true,
+  size: 0.005
+})
+
+const particlesMaterial = new THREE.PointsMaterial({
+  transparent: true,
+  size: 0.005
+})
+
+// Mesh
+const sphere = new THREE.Points(geometry,torusMaterial)
+const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial)
+scene.add(sphere, particlesMesh)
+
+// Lights
+
+const pointLight = new THREE.PointLight(0xffffff, 0.1)
+pointLight.position.x = 2
+pointLight.position.y = 3
+pointLight.position.z = 4
+scene.add(pointLight)
+
+/**
+ * Sizes
+ */
+const sizes = {
+    width: window.innerWidth,
+    height: window.innerHeight
+}
+
+window.addEventListener('resize', () =>
+{
+    // Update sizes
+    sizes.width = window.innerWidth
+    sizes.height = window.innerHeight
+
+    // Update camera
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
+
+    // Update renderer
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+})
+
+/**
+ * Camera
+ */
+// Base camera
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+camera.position.x = 0
+camera.position.y = 0
+camera.position.z = 2
+scene.add(camera)
+
+// Controls
+// const controls = new OrbitControls(camera, canvas)
+// controls.enableDamping = true
+
+/**
+ * Renderer
+ */
+const renderer = new THREE.WebGLRenderer({
+    canvas: canvas
+})
+renderer.setSize(sizes.width, sizes.height)
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+/**
+ * Animate
+ */
+
+const clock = new THREE.Clock()
+
+const tick = () =>
+{
+
+    const elapsedTime = clock.getElapsedTime()
+
+    // Update objects
+    sphere.rotation.y = .5 * elapsedTime
+    particlesMesh.position.y = .5 * elapsedTime
+    // Update Orbital Controls
+    // controls.update()
+
+    // Render
+    renderer.render(scene, camera)
+
+    // Call tick again on the next frame
+    window.requestAnimationFrame(tick)
+}
+
+tick()
