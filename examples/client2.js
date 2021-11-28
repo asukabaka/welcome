@@ -18,7 +18,9 @@ let controls, water, sun;
 let sky;
 let raycaster;
 let material, material2;
-let mesh, mesh1, mesh2, mesh3;
+let mesh, mesh1, mesh2, mesh3, mesh4, mesh5;
+let analyser, uniforms, data;
+let spotLight, light1, light2;
 let moveForward = false;
 let moveBackward = false;
 let moveLeft = false;
@@ -31,11 +33,12 @@ const vertex = new THREE.Vector3();
 const color = new THREE.Color();
 const objects = [];
 const params = {
-  exposure: .6,
+  exposure: 0,
   bloomStrength: 0.5,
-  bloomThreshold: 0,
+  bloomThreshold: .75,
   bloomRadius: 1
 };
+
 
 init();
 initControls();
@@ -46,10 +49,18 @@ initSky();
 initParticles();
 initGroundParticles();
 initModels();
+initSound();
+initSpotLight();
+
+animate();
 animateWater();
+animateBloom();
 animateWASD();
 animateParticles();
 animateGroundParticles();
+
+render();
+renderGroundParticles();
 
 function init() {
   clock = new THREE.Clock();
@@ -61,7 +72,9 @@ function init() {
     1,
     10000
   );
-  camera.position.y = 30;
+  camera.position.set(-150,30,2.5); // Set position like this
+  // camera.position.set(2200,30,2.5); // Set position like this
+  camera.lookAt(new THREE.Vector3(2200,0,0)); // Set look at coordinate like this
   // Define basic scene parameters
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x000000);
@@ -88,6 +101,25 @@ function init() {
   renderer.toneMapping = THREE.ReinhardToneMapping;
   document.body.appendChild(renderer.domElement);
 
+}
+function initSound() {
+  const fftSize = 128;
+
+  const listener = new THREE.AudioListener();
+
+  const audio = new THREE.Audio( listener );
+  const file = './assets/ambientMusic.mp3';
+
+
+    const loader = new THREE.AudioLoader();
+    loader.load( file, function ( buffer ) {
+      audio.setLoop(true);
+      audio.setBuffer( buffer );
+      audio.play();
+
+    } );
+  analyser = new THREE.AudioAnalyser( audio, fftSize );
+  const data = analyser.getAverageFrequency();
 }
 function initWASD(){
   // Define key controls for WASD controls
@@ -193,7 +225,7 @@ function initBloom() {
 
     const model = gltf.scene;
 
-    scene.add( model );
+    // scene.add( model );
 
     mixer = new THREE.AnimationMixer( model );
     const clip = gltf.animations[ 0 ];
@@ -338,7 +370,7 @@ function initSky() {
 					mieDirectionalG: 1,
 					elevation: 2,
 					azimuth: 180,
-					exposure: .75
+					exposure: .55
 				};
 
 				function guiChanged() {
@@ -395,7 +427,7 @@ function initParticles() {
 									geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
 
 									material = new THREE.PointsMaterial( { size: 1.75, sizeAttenuation: true, map: sprite, alphaTest: 0.25, transparent: true, opacity: .9 } );
-									material.color.setHSL( 0.5, 1, 0.5 );
+									material.color.setHSL( 0, 0, 1 );
 
 
 									const particles = new THREE.Points( geometry, material );
@@ -420,7 +452,7 @@ function initGroundParticles (){
 
 									geometry2.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices2, 3 ) );
 
-									material2 = new THREE.PointsMaterial( { size: .25, sizeAttenuation: true, map: sprite2, alphaTest: 0.25, transparent: true, opacity: .9 } );
+									material2 = new THREE.PointsMaterial( { size: .25, sizeAttenuation: true, map: sprite2, alphaTest: 0.25, transparent: true, opacity: 1 } );
 									material2.color.setHSL( 0, 0, 1 );
 
 
@@ -456,34 +488,58 @@ function initModels() {
 			console.error(error);
 		}
 	);
-
-	const loader2 = new GLTFLoader().load("./assets/BrokenBuilding1.gltf",
+  const loader4 = new GLTFLoader().load("./assets/shrine.gltf",
 		function(gltf) {
-			mesh2 = gltf.scene;
-			mesh2.position.set(-3000, 0, 1000);
-			mesh2.scale.set(300, 300, 300);
-			mesh2.rotation.x = Math.PI / -30;
-			scene.add(mesh2);
+			mesh4 = gltf.scene;
+			mesh4.position.set(2200, -5, 5);
+			mesh4.scale.set(3, 3, 3);
+			scene.add(mesh4);
 		},
 		undefined,
 		function(error) {
 			console.error(error);
 		}
 	);
-
-	const loader3 = new GLTFLoader().load("./assets/BrokenBuilding1.gltf",
+  const loader5 = new GLTFLoader().load("./assets/trees.gltf",
 		function(gltf) {
-			mesh3 = gltf.scene;
-			mesh3.position.set(-3000, 0, -1000);
-			mesh3.scale.set(200, 200, 200);
-			mesh3.rotation.x = Math.PI / 40;
-			scene.add(mesh3);
+			mesh5 = gltf.scene;
+			mesh5.position.set(0, 0, 0);
+			mesh5.scale.set(3, 3, 3);
+			scene.add(mesh5);
 		},
 		undefined,
 		function(error) {
 			console.error(error);
 		}
 	);
+}
+function initSpotLight() {
+  const ambient = new THREE.AmbientLight( 0x3d8d96, 1 );
+				scene.add( ambient );
+
+				spotLight = new THREE.SpotLight( 0x3d8d96, 1 );
+				spotLight.position.set( 2200, -5, -5 );
+				spotLight.angle = Math.PI / Math.PI;
+				spotLight.penumbra = 0.1;
+				spotLight.decay = 2;
+				spotLight.distance = 200;
+
+				spotLight.castShadow = true;
+				spotLight.shadow.mapSize.width = 512;
+				spotLight.shadow.mapSize.height = 512;
+				spotLight.shadow.camera.near = 10;
+				spotLight.shadow.camera.far = 200;
+				spotLight.shadow.focus = 1;
+				scene.add( spotLight );
+
+        // const sphere = new THREE.SphereGeometry( 0.5, 16, 8 );
+        light1 = new THREE.PointLight( 0x3d8d96, 10, 50 );
+        light1.position.set( 2200, 30, 5 );
+        scene.add( light1 );
+        light2 = new THREE.PointLight( 0xffffff, 40, 80 );
+        light2.position.set( 2220, 40, 5 );
+				// light1.add( new THREE.Mesh( sphere, new THREE.MeshBasicMaterial( { color: 0x3d8d96 } ) ) );
+				scene.add( light2 );
 }
 
 function onWindowResize() {
@@ -499,6 +555,9 @@ function onWindowResize() {
 
 }
 
+function animate() {
+    renderer.render(scene, camera);
+}
 function animateWASD() {
   requestAnimationFrame(animateWASD);
 
@@ -555,7 +614,7 @@ function animateBloom() {
 
   const delta = clock.getDelta();
 
-  mixer.update( delta );
+  // mixer.update( delta );
 
   stats.update();
 
@@ -577,10 +636,13 @@ function animateParticles() {
 function animateGroundParticles() {
   requestAnimationFrame( animateGroundParticles );
 
-  renderParticles();
+  renderGroundParticles();
   stats.update();
 }
 
+function render() {
+  				renderer.render( scene, camera );
+}
 function renderWater() {
   const time = performance.now() * 0.001;
 				water.material.uniforms[ 'time' ].value += 1.0 / 60.0;
@@ -592,14 +654,15 @@ function renderSky() {
 }
 function renderParticles() {
 
-				material.color.setHSL( 0.5, 1, 0.5 );
+				material.color.setHSL( 0, 0, 1 );
 
 				renderer.render( scene, camera );
 
 }
 function renderGroundParticles() {
 
-				material.color.setHSL( 0.5, 1, 0.5 );
+        const data2 = analyser.data;
+				material.color.setHSL( 0, 0, 1 );
 
 				renderer.render( scene, camera );
 

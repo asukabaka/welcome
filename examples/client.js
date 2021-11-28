@@ -20,7 +20,7 @@ import { Sky } from './jsm/objects/Sky.js';
 let camera, scene, controls, material, stats;
 let composer, renderer, mixer, clock;
 let water, sun, sky;
-let mesh, mesh1, mesh2, mesh3;
+let mesh, mesh1, mesh2, mesh3, mesh4;
 const objects = [];
 let raycaster;
 
@@ -305,7 +305,7 @@ function initModels() {
 			mesh1.position.set(10, 0, 10);
 			mesh1.scale.set(300, 300, 300);
 			// Add model to scene
-			scene.add(mesh1);
+			// scene.add(mesh1);
 		},
 		undefined,
 		function(error) {
@@ -319,7 +319,7 @@ function initModels() {
 			mesh2.position.set(-3000, 0, 1000);
 			mesh2.scale.set(300, 300, 300);
 			mesh2.rotation.x = Math.PI / -30;
-			scene.add(mesh2);
+			// scene.add(mesh2);
 		},
 		undefined,
 		function(error) {
@@ -333,7 +333,19 @@ function initModels() {
 			mesh3.position.set(-3000, 0, -1000);
 			mesh3.scale.set(200, 200, 200);
 			mesh3.rotation.x = Math.PI / 40;
-			scene.add(mesh3);
+			// scene.add(mesh3);
+		},
+		undefined,
+		function(error) {
+			console.error(error);
+		}
+	);
+	const loader = new GLTFLoader().load("./assets/shrine.gltf",
+		function(gltf) {
+			mesh4 = gltf.scene;
+			mesh4.position.set(-2500, 0, 1000);
+			mesh4.scale.set(3, 3, 3);
+			scene.add(mesh4);
 		},
 		undefined,
 		function(error) {
