@@ -46,8 +46,8 @@ initWASD();
 initBloom();
 initWater();
 initSky();
-initParticles();
-initGroundParticles();
+// initParticles();
+// initGroundParticles();
 initModels();
 initSound();
 initSpotLight();
@@ -56,11 +56,11 @@ animate();
 animateWater();
 animateBloom();
 animateWASD();
-animateParticles();
-animateGroundParticles();
+// animateParticles();
+// animateGroundParticles();
 
 render();
-renderGroundParticles();
+// renderGroundParticles();
 
 function init() {
   clock = new THREE.Clock();
