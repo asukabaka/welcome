@@ -46,8 +46,8 @@ initWASD();
 initBloom();
 initWater();
 initSky();
-// initParticles();
-// initGroundParticles();
+initParticles();
+initGroundParticles();
 initModels();
 initSound();
 initSpotLight();
@@ -56,11 +56,11 @@ animate();
 animateWater();
 animateBloom();
 animateWASD();
-// animateParticles();
-// animateGroundParticles();
+animateParticles();
+animateGroundParticles();
 
 render();
-// renderGroundParticles();
+renderGroundParticles();
 
 function init() {
   clock = new THREE.Clock();
@@ -478,7 +478,7 @@ function initModels() {
 	const loader1 = new GLTFLoader().load("./assets/BrokenBuilding1.gltf",
 		function(gltf) {
 			mesh1 = gltf.scene;
-			mesh1.position.set(10, 0, 10);
+			mesh1.position.set(10, 0, 5);
 			mesh1.scale.set(300, 300, 300);
 			// Add model to scene
 			scene.add(mesh1);
